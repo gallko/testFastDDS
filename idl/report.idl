@@ -1,0 +1,4 @@
+struct report
+{
+    long number_of_packets;
+};

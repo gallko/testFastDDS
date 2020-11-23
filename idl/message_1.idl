@@ -1,0 +1,4 @@
+struct message_1
+{
+    string message;
+};
