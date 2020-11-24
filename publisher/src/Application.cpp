@@ -1,9 +1,8 @@
-#include <cassert>
 #include <stdexcept>
 #include <iostream>
 #include <csignal>
-#include <IDataGeneratorFactory.h>
 #include "Application.h"
+#include "DataGeneratorFactory.h"
 
 Application *Application::mInstance = nullptr;
 
@@ -67,7 +66,7 @@ int Application::main() {
             return !mSignals.empty();
         });
     } while (mIsRun);
-    IDataGeneratorFactory::instance()->destroyAllGenerators();
+    DataGeneratorFactory::instance()->destroyAllGenerators();
     std::cout << "The main event loop is stopped.\n";
     return 0;
 }

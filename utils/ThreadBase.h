@@ -16,6 +16,11 @@ public:
     void closeThread();
     std::string getNameThread() const;
 
+    ThreadBase(const ThreadBase&) = delete;
+    ThreadBase &operator=(const ThreadBase&) = delete;
+    ThreadBase(ThreadBase&&) = delete;
+    ThreadBase &operator=(ThreadBase&&) = delete;
+
 protected:
     virtual void onStart() = 0;
     virtual void onLoop() = 0;
