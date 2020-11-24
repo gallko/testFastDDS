@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <csignal>
+#include <ParserArgs.h>
 #include "Application.h"
 #include "DataGeneratorFactory.h"
 
@@ -50,10 +51,28 @@ void Application::sigPrintLogText(const std::string &message) {
 }
 
 bool Application::init() {
+    ParserOpt opt(mArgc, mArgv);
+    ParserOpt::ParserElement<std::string> conf_file('c', "config", "configuration files", "FILE",false);
+    ParserOpt::ParserElement<bool> help('h', "help", "display this help and exit", "",false);
+    opt.add_option(conf_file);
+    opt.add_option(help);
+    if (!opt.parsing()) {
+        std::cout << opt.getError() << std::endl;
+        return false;
+    }
+    if (help.getValue()) {
+        opt.print_help(stdout);
+        mIsRun = false;
+        return true;
+    }
+
     return true;
 }
 
 int Application::main() {
+    if (!mIsRun) {
+        return 0;
+    }
     if (mSignals.empty()) {
         mSignals.emplace_back([](){}); // fake signal
     }

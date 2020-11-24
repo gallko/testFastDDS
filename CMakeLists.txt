@@ -14,6 +14,7 @@ if(NOT fastrtps_FOUND)
     find_package(fastrtps REQUIRED)
 endif()
 
+add_subdirectory(ext_lib/parser_args)
 add_subdirectory(idl)
 add_subdirectory(utils)
 add_subdirectory(publisher)

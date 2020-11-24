@@ -11,7 +11,7 @@ namespace {
 int main(int argc, char *argv[]) {
     auto ap = Application(argc, argv);
     if (!ap.init()) {
-        return -1;
+        return 1;
     }
     shutdown_handler = [&ap](int signal) {
         ap.sigStopApp(signal);
