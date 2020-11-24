@@ -4,12 +4,10 @@
 #include <string>
 #include <shared_mutex>
 #include <ThreadBase.h>
-#include <DataGenerator.h>
+#include <IDataGenerator.h>
 
 class DataGeneratorImpl : public IDataGenerator, public utils::ThreadBase {
 private: // static
-    static std::shared_mutex mProtectDataGenerators;
-    static std::map<std::string, std::shared_ptr<DataGeneratorImpl>> mDataGenerators;
     static std::shared_ptr<char[]> genData(size_t dataSize);
 
 public:
@@ -25,8 +23,6 @@ public:
     DataGeneratorImpl &operator=(DataGeneratorImpl&&) = delete;
 
 private:
-    friend DataGeneratorFactory;
-
     void onStart() override;
     void onLoop() override;
     void onClose() override;
