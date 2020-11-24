@@ -14,7 +14,9 @@ if(NOT fastrtps_FOUND)
     find_package(fastrtps REQUIRED)
 endif()
 
-add_subdirectory(ext_lib/parser_args)
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(ext_lib/nlohmann_json)
+
 add_subdirectory(idl)
 add_subdirectory(utils)
 add_subdirectory(publisher)

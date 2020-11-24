@@ -50,20 +50,39 @@ void Application::sigPrintLogText(const std::string &message) {
     mWaitSignal.notify_all();
 }
 
+void Application::sigAddSender(const DConfigSender &config) {
+    Signal signal([](){
+        std::cout << "sigAddSender" << std::endl;
+    });
+    std::lock_guard lock(mProtectSignals);
+    mSignals.push_back(std::move(signal));
+    mWaitSignal.notify_all();
+}
+
+void Application::sigAddReceiver(const DConfigReceiver &config) {
+    Signal signal([](){
+        std::cout << "sigAddReceiver" << std::endl;
+    });
+    std::lock_guard lock(mProtectSignals);
+    mSignals.push_back(std::move(signal));
+    mWaitSignal.notify_all();
+}
+
 bool Application::init() {
     ParserOpt opt(mArgc, mArgv);
     ParserOpt::ParserElement<std::string> conf_file('c', "config", "configuration files", "FILE",false);
     ParserOpt::ParserElement<bool> help('h', "help", "display this help and exit", "",false);
     opt.add_option(conf_file);
     opt.add_option(help);
-    if (!opt.parsing()) {
-        std::cout << opt.getError() << std::endl;
-        return false;
-    }
+    auto flag = opt.parsing();
     if (help.getValue()) {
         opt.print_help(stdout);
         mIsRun = false;
         return true;
+    }
+    if (!flag) {
+        std::cout << opt.getError() << std::endl;
+        return false;
     }
 
     return true;

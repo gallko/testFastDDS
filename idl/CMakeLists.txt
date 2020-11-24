@@ -6,7 +6,7 @@ file(GLOB ${PROJECT_NAME}_src *.cpp)
 
 add_library(${PROJECT_NAME} STATIC ${${PROJECT_NAME}_src})
 
-if(NOT EXISTS ${IDL_EXE})
+if(NOT DEFINED IDL_EXE)
     message(FATAL_ERROR "Please set IDL_EXE variable.")
 endif()
 

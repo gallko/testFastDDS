@@ -17,18 +17,6 @@ DataGeneratorFactory::DataGeneratorFactory()
 {
     /* empty */
 }
-/*
-template<typename DataType>
-std::shared_ptr<IDataSource<DataType>> DataGeneratorFactory::createGenerator(const std::string &name, int timeOut) {
-
-}
-
-template<typename DataType>
-std::shared_ptr<IDataSource<DataType>> DataGeneratorFactory::getGenerator(const std::string &name) {
-    std::shared_lock lock(mProtectDataGenerators);
-    auto item = mDataGenerators.find(name);
-    return item != mDataGenerators.end() ? item->second : nullptr;
-}*/
 
 void DataGeneratorFactory::destroyGenerator(const std::string &name) {
     std::unique_lock lock(mProtectDataGenerators);

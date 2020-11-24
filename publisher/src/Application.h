@@ -27,6 +27,8 @@ public:
 
     void sigPrintLogText(const std::string &message) override;
     void sigStopApp(int num = 0) override;
+    void sigAddSender(const DConfigSender &config) override;
+    void sigAddReceiver(const DConfigReceiver &config) override;
 
 private:
     using Signal = std::packaged_task<void()>;
