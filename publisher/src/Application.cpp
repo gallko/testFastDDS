@@ -94,15 +94,11 @@ bool Application::init() {
         return false;
     }
     parse_conf(conf_file.getValue());
-
-    mParticipant = std::make_shared<Participant>("MainPart", 1000,
+    mParticipant = std::make_shared<Participant>("Participant", 1000,
                                                  std::shared_ptr<ISignals>(this, [](void *){}));
     mParticipant->init();
+    mParticipant->creatWriter("MsgTopic", "msg1", 100, 1000, 1000);
 
-//    using namespace std::chrono_literals;
-//    std::this_thread::sleep_for(2s);
-
-//    mParticipant.reset();
 
     return true;
 }
@@ -143,7 +139,6 @@ void Application::parse_conf(const std::string &file) {
     }
     for (auto &topic: j["topics"]) {
         std::cout << topic.is_object();
-
     }
 
 }

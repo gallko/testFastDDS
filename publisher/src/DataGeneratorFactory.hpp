@@ -11,13 +11,13 @@ namespace {
                 : DataGenerator(name, timeOut, sizePayload)
                 , mConverter(std::move(converter))
         {
-
+            /* empty */
         }
         ~DataSourceImpl() override = default;
 
         std::shared_ptr<DataType> popData() override {
-            std::lock_guard lock(mProtectData);
-            return std::move(mData);
+            auto data = std::atomic_exchange(&mData, std::shared_ptr<DataType>(nullptr));
+            return data;
         }
 
         std::string getSourceName() const override {
@@ -28,13 +28,11 @@ namespace {
         void onDataAvailable(void *sameData, size_t sizePayload) override {
             if (auto converter = mConverter.lock(); converter) {
                 auto data = converter->converter(sameData, sizePayload);
-                std::lock_guard lock(mProtectData);
-                mData = std::move(data);
+                std::atomic_store(&mData, data);
             }
         }
 
         std::weak_ptr<IDataConverter<DataType>> mConverter;
-        std::mutex mProtectData;
         std::shared_ptr<DataType> mData;
     };
 }
@@ -45,7 +43,7 @@ DataGeneratorFactory::createGenerator(const std::string &name, uint32_t timeOut,
 {
     std::shared_ptr<DataSourceImpl<DataType>> ptr{nullptr};
     std::lock_guard lock(mProtectDataGenerators);
-    if (!name.empty() && name.size() < 12) {
+    if (!name.empty()) {
         auto item = mDataGenerators.find(name);
         if (item == mDataGenerators.end()) {
             ptr = std::make_shared<DataSourceImpl<DataType>>(name, timeOut, sizePayload, converter);

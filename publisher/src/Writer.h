@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <atomic>
 #include <IWriter.h>
 #include <IDataConverter.h>
 #include <IDataSource.h>
@@ -15,18 +16,20 @@
 template<typename DataType>
 class Writer: public IWriter, public utils::ThreadBase, public IDataConverter<DataType> {
 public:
-    Writer(const std::string &nameType, uint32_t timeOutToSend);
+    Writer(const std::string &topicName, const std::string &typeName, uint32_t timeOutToSend);
     ~Writer() override;
 
     bool init(std::weak_ptr<IDataSource<DataType>> dataSource,
-              eprosima::fastdds::dds::DomainParticipant* domainParticipant, eprosima::fastdds::dds::Publisher* mPublisher);
+              eprosima::fastdds::dds::DomainParticipant* domainParticipant,
+              eprosima::fastdds::dds::Publisher* mPublisher);
 
     size_t getNumberMessagesSent() const override;
 
 private:
     void onLoop() override;
 
-    const std::string mNameType;
+    const std::string mTypeName;
+    const std::string mTopicName;
     std::weak_ptr<IDataSource<DataType>> mDataSource;
     eprosima::fastdds::dds::DomainParticipant* mDomainParticipant;
     eprosima::fastdds::dds::Publisher* mPublisher;

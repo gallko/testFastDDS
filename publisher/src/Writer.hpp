@@ -1,10 +1,11 @@
 #pragma once
 
 template<typename DataType>
-Writer<DataType>::Writer(const std::string &nameType, uint32_t timeOutToSend)
-    : ThreadBase(nameType + "_wrt", timeOutToSend)
-    , mNameType(nameType)
-    , mDataSource(nullptr)
+Writer<DataType>::Writer(const std::string &topicName, const std::string &typeName, uint32_t timeOutToSend)
+    : ThreadBase(topicName + "_wrt", timeOutToSend)
+    , mTypeName(typeName)
+    , mTopicName(topicName)
+    , mDataSource()
     , mDomainParticipant(nullptr)
     , mPublisher(nullptr)
     , mDataWriter(nullptr)
@@ -30,18 +31,17 @@ Writer<DataType>::~Writer() {
 template<typename DataType>
 bool Writer<DataType>::init(std::weak_ptr<IDataSource<DataType>> dataSource,
                             eprosima::fastdds::dds::DomainParticipant *domainParticipant,
-                            eprosima::fastdds::dds::Publisher *publisher)
-{
+                            eprosima::fastdds::dds::Publisher *publisher) {
     using namespace eprosima::fastdds::dds;
     mDataSource = std::move(dataSource);
     mDomainParticipant = domainParticipant;
     mPublisher = publisher;
 
-    if (!mDomainParticipant || !mPublisher || !mDataSource) {
+    if (!mDomainParticipant || !mPublisher || mDataSource.expired()) {
         return false;
     }
 
-    mTopic = mDomainParticipant->create_topic(mNameType + "Topic", mNameType, TOPIC_QOS_DEFAULT);
+    mTopic = mDomainParticipant->create_topic(mTopicName, mTypeName, TOPIC_QOS_DEFAULT);
     if (!mTopic) {
         return false;
     }
@@ -70,6 +70,7 @@ size_t Writer<DataType>::getNumberMessagesSent() const {
 
 template<typename DataType>
 void Writer<DataType>::onLoop() {
+    std::cout << "From Writer: time to send\n";
     if (auto source = mDataSource.lock(); source) {
         auto data = source->popData();
         if (data && mDataWriter->write(data.get())) {

@@ -3,6 +3,7 @@
 #include <memory>
 #include <shared_mutex>
 #include <map>
+#include <Message_1.h>
 #include <IDataSource.h>
 #include <IDataConverter.h>
 #include "DataGenerator.h"

@@ -1,6 +1,8 @@
 #include "Participant.h"
-#include "Writer.h"
+#include "WriterMsg1.h"
+#include "DataGeneratorFactory.h"
 
+#include <Message_1.h>
 #include <Message_1PubSubTypes.h>
 #include <ReportPubSubTypes.h>
 
@@ -108,9 +110,12 @@ bool Participant::init() {
     return true;
 }
 
-bool Participant::creatWriter(const std::string &topicName) {
-
-    return false;
+bool Participant::creatWriter(const std::string &topicName, const std::string &typeName, size_t sizePayload, uint32_t timeOutToSend, uint32_t timeOutToGen) {
+    auto writer = std::make_shared<WriterMsg1>(topicName, typeName, timeOutToSend);
+    auto generator = DataGeneratorFactory::instance()->createGenerator<Message_1>(topicName, timeOutToGen, sizePayload, writer);
+    writer->init(generator, mDomainParticipant, mPublisher);
+    mWriters[topicName] = writer;
+    return true;
 }
 
 void Participant::on_data_available(DataReader *reader) {

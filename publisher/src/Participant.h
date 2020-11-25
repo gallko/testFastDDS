@@ -1,4 +1,5 @@
 #pragma once
+#include <shared_mutex>
 #include <ThreadBase.h>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/subscriber/DataReaderListener.hpp>
@@ -12,7 +13,7 @@ public:
     ~Participant() override;
     bool init();
 
-    bool creatWriter(const std::string &topicName);
+    bool creatWriter(const std::string &topicName, const std::string &dataName, size_t sizePayload, uint32_t timeOutToSend, uint32_t timeOutToGen);
     bool destroyWriter(const std::string &topicName);
 
 
