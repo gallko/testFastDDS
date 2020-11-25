@@ -7,6 +7,8 @@
 
 #include <ISignals.h>
 
+class Participant;
+
 class Application final: public ISignals {
 public: // static
     static int exec();
@@ -25,15 +27,16 @@ public:
 
     bool init();
 
-    void sigPrintLogText(const std::string &message) override;
-    void sigStopApp(int num = 0) override;
-    void sigAddSender(const DConfigSender &config) override;
-    void sigAddReceiver(const DConfigReceiver &config) override;
+    std::future<void> sigPrintLogText(const std::string &message) override;
+    std::future<void> sigStopApp(int num = 0) override;
+    std::future<void> sigAddSender(const DConfigSender &config) override;
+    std::future<void> sigAddReceiver(const DConfigReceiver &config) override;
 
 private:
     using Signal = std::packaged_task<void()>;
 
     int main();
+    void parse_conf(const std::string &file);
 
     int mArgc;
     char **mArgv;
@@ -42,4 +45,6 @@ private:
     std::mutex mProtectSignals;
     std::list<Signal> mSignals;
     std::condition_variable mWaitSignal;
+
+    std::shared_ptr<Participant> mParticipant;
 };

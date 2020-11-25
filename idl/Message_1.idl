@@ -1,4 +1,4 @@
-struct message_1
+struct Message_1
 {
     string message;
 };

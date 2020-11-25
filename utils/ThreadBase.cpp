@@ -1,10 +1,13 @@
 #include "ThreadBase.h"
 
+#include <utility>
+#include <iostream>
+
 namespace utils {
 
-ThreadBase::ThreadBase(const std::string &name, uint32_t timeOut)
+ThreadBase::ThreadBase(std::string name, uint32_t timeOut)
     : mTread(nullptr)
-    , mName(name)
+    , mName(std::move(name))
     , mLockLoop()
     , mTimeOut(timeOut)
     , mWaitLoop()

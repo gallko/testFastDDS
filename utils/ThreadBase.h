@@ -10,7 +10,7 @@ namespace utils {
 
 class ThreadBase {
 public:
-    ThreadBase(const std::string &name, uint32_t timeOut);
+    ThreadBase(std::string name, uint32_t timeOut);
     virtual ~ThreadBase();
     bool initThread();
     void closeThread();
@@ -22,13 +22,12 @@ public:
     ThreadBase &operator=(ThreadBase&&) = delete;
 
 protected:
-    virtual void onStart() = 0;
+    virtual void onStart() {};
     virtual void onLoop() = 0;
-    virtual void onClose() = 0;
+    virtual void onClose() {};
+    virtual void worker();
 
 private:
-    void worker();
-
     enum class ReasonWakeUp;
 
     std::unique_ptr<std::thread> mTread;

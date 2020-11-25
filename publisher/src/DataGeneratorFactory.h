@@ -18,7 +18,7 @@ public:
     DataGeneratorFactory &operator=(DataGeneratorFactory&&) = delete;
 
     template<typename DataType>
-    std::shared_ptr<IDataSource<DataType>> createGenerator(const std::string &name, int timeOut, std::shared_ptr<IDataConverter<DataType>> converter);
+    std::shared_ptr<IDataSource<DataType>> createGenerator(const std::string &name, uint32_t timeOut, size_t sizePayload, std::weak_ptr<IDataConverter<DataType>> converter);
 
     void destroyGenerator(const std::string &name);
     void destroyAllGenerators();

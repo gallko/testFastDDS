@@ -1,28 +1,27 @@
 {
-  "publisher": {
-    "name": "Participant_pub",
-    "topics": [
-      {
-        "type": "pub",
-        "name": "topic1",
-        "dataType": "msg1",
-        "sizePayload": 50,
-        "timeOutGeneration": 500,
-        "timeOutSend": 500
-      },
-      {
-        "type": "pub",
-        "name": "topic2",
-        "dataType": "msg2",
-        "sizePayload": 100,
-        "timeOutGeneration": 800,
-        "timeOutSend": 1000
-      },
-      {
-        "type": "sub",
-        "name": "topicReport",
-        "dataType": "report"
-      }
-    ]
-  }
+  "name": "Participant_pub",
+  "timeOutLog": 5,
+  "topics": [
+    {
+      "type": "pub",
+      "name": "topic1",
+      "dataType": "msg1",
+      "sizePayload": 50,
+      "timeOutGeneration": 500,
+      "timeOutSend": 500
+    },
+    {
+      "type": "pub",
+      "name": "topic2",
+      "dataType": "msg2",
+      "sizePayload": 100,
+      "timeOutGeneration": 800,
+      "timeOutSend": 1000
+    },
+    {
+      "type": "sub",
+      "name": "topicReport",
+      "dataType": "report"
+    }
+  ]
 }

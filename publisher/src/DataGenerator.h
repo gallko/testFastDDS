@@ -3,13 +3,12 @@
 
 class DataGenerator : public utils::ThreadBase {
 public:
-    DataGenerator(const std::string &name, uint32_t timeOut);
+    DataGenerator(const std::string &name, uint32_t timeOut, size_t sizePayload);
     ~DataGenerator() override = default;
 
-    virtual void onDataAvailable(void *sameData) = 0;
+    virtual void onDataAvailable(void *sameData, size_t size) = 0;
 
 private:
-    void onStart() override;
     void onLoop() override;
-    void onClose() override;
+    size_t mSizePayload;
 };

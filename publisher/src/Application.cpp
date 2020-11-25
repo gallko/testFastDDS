@@ -2,8 +2,12 @@
 #include <iostream>
 #include <csignal>
 #include <ParserArgs.h>
+#include <nlohmann/json.hpp>
+#include <fstream>
 #include "Application.h"
 #include "DataGeneratorFactory.h"
+#include "Participant.h"
+
 
 Application *Application::mInstance = nullptr;
 
@@ -18,6 +22,7 @@ Application::Application(int argc, char **argv)
     , mProtectSignals()
     , mSignals()
     , mWaitSignal()
+    , mParticipant(nullptr)
 {
     if (mInstance) {
         throw std::runtime_error("An instance of the Application class has already been created.");
@@ -29,7 +34,7 @@ Application::~Application() {
     mInstance = nullptr;
 }
 
-void Application::sigStopApp(int num) {
+std::future<void> Application::sigStopApp(int num) {
     Signal signal([&]() {
         mIsRun = false;
     });
@@ -39,38 +44,42 @@ void Application::sigStopApp(int num) {
     }
     mSignals.push_back(std::move(signal));
     mWaitSignal.notify_all();
+    return mSignals.back().get_future();
 }
 
-void Application::sigPrintLogText(const std::string &message) {
+std::future<void> Application::sigPrintLogText(const std::string &message) {
     Signal signal([message](){
-        std::cout << message << std::endl;
+        std::cout << message;
     });
     std::lock_guard lock(mProtectSignals);
     mSignals.push_back(std::move(signal));
     mWaitSignal.notify_all();
+    return mSignals.back().get_future();
 }
 
-void Application::sigAddSender(const DConfigSender &config) {
+std::future<void> Application::sigAddSender(const DConfigSender &config) {
     Signal signal([](){
         std::cout << "sigAddSender" << std::endl;
     });
     std::lock_guard lock(mProtectSignals);
     mSignals.push_back(std::move(signal));
     mWaitSignal.notify_all();
+    return mSignals.back().get_future();
 }
 
-void Application::sigAddReceiver(const DConfigReceiver &config) {
+std::future<void> Application::sigAddReceiver(const DConfigReceiver &config) {
     Signal signal([](){
         std::cout << "sigAddReceiver" << std::endl;
     });
     std::lock_guard lock(mProtectSignals);
     mSignals.push_back(std::move(signal));
     mWaitSignal.notify_all();
+    return mSignals.back().get_future();
 }
 
 bool Application::init() {
     ParserOpt opt(mArgc, mArgv);
-    ParserOpt::ParserElement<std::string> conf_file('c', "config", "configuration files", "FILE",false);
+    ParserOpt::ParserElement<std::string> conf_file('c', "config", "configuration files", "FILE",true);
     ParserOpt::ParserElement<bool> help('h', "help", "display this help and exit", "",false);
     opt.add_option(conf_file);
     opt.add_option(help);
@@ -84,6 +93,16 @@ bool Application::init() {
         std::cout << opt.getError() << std::endl;
         return false;
     }
+    parse_conf(conf_file.getValue());
+
+    mParticipant = std::make_shared<Participant>("MainPart", 1000,
+                                                 std::shared_ptr<ISignals>(this, [](void *){}));
+    mParticipant->init();
+
+//    using namespace std::chrono_literals;
+//    std::this_thread::sleep_for(2s);
+
+//    mParticipant.reset();
 
     return true;
 }
@@ -107,4 +126,24 @@ int Application::main() {
     DataGeneratorFactory::instance()->destroyAllGenerators();
     std::cout << "The main event loop is stopped.\n";
     return 0;
+}
+
+void Application::parse_conf(const std::string &file) {
+    using namespace nlohmann;
+    std::ifstream ifs(file);
+    if (!ifs.is_open()) {
+        throw std::runtime_error("can't open");
+    }
+    auto j = json::parse(ifs);
+    if (!j.contains("name")) {
+        throw std::runtime_error("missed required the \"name\" field");
+    }
+    if (!j.contains("topics") && !j["topics"].is_array()) {
+        throw std::runtime_error("missed required or incorrect type of the \"topics\" field");
+    }
+    for (auto &topic: j["topics"]) {
+        std::cout << topic.is_object();
+
+    }
+
 }
