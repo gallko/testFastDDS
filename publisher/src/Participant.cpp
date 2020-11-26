@@ -121,7 +121,7 @@ bool Participant::createWriter(const std::string &topicName, const std::string &
     }
     if (dataName == "msg1") {
         auto writer = std::make_shared<WriterMsg1Impl>(topicName, dataName, timeToSend);
-        auto generator = std::make_shared<DataSourceImpl<Message_1>>(topicName, timeToGen, sizePayload, std::dynamic_pointer_cast<IDataConverter<Message_1>>(writer));
+        auto generator = std::make_shared<DataSourceImpl<Message_1>>(topicName, timeToGen, sizePayload, writer);
         if (!generator->init() || !writer->init(generator, mDomainParticipant, mPublisher)) {
             lock.lock();
             mWriters.erase(topicName);
@@ -131,7 +131,7 @@ bool Participant::createWriter(const std::string &topicName, const std::string &
         mWriters[topicName] = {writer, generator};
     } else if (dataName == "msg2") {
         auto writer = std::make_shared<WriterMsg2Impl>(topicName, dataName, timeToSend);
-        auto generator = std::make_shared<DataSourceImpl<Message_2>>(topicName, timeToGen, sizePayload, std::dynamic_pointer_cast<IDataConverter<Message_2>>(writer));
+        auto generator = std::make_shared<DataSourceImpl<Message_2>>(topicName, timeToGen, sizePayload, writer);
         if (!generator->init() || !writer->init(generator, mDomainParticipant, mPublisher)) {
             lock.lock();
             mWriters.erase(topicName);
