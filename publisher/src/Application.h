@@ -29,11 +29,12 @@ public:
 
     std::future<void> sigPrintLogText(const std::string &message) override;
     std::future<void> sigStopApp(int num = 0) override;
-    std::future<void> sigAddSender(const DConfigSender &config) override;
-    std::future<void> sigAddReceiver(const DConfigReceiver &config) override;
+    std::future<void> sigCreateParticipant(const DParticipantConfig &config) override;
+    std::future<void> sigCreateWriter(const DWriterConfig &config) override;
+
 
 private:
-    using Signal = std::packaged_task<void()>;
+    using Signal = std::packaged_task< void(int *) >;
 
     int main();
     void parse_conf(const std::string &file);

@@ -1,27 +1,27 @@
 {
-  "name": "Participant_pub",
-  "timeOutLog": 5,
+  "name": "Participant",
+  "timeToReport": 5000,
   "topics": [
     {
-      "type": "pub",
       "name": "topic1",
       "dataType": "msg1",
       "sizePayload": 50,
-      "timeOutGeneration": 500,
-      "timeOutSend": 500
+      "timeToGeneration": 4000,
+      "timeToSend": 5000
     },
     {
-      "type": "pub",
       "name": "topic2",
       "dataType": "msg2",
       "sizePayload": 100,
-      "timeOutGeneration": 800,
-      "timeOutSend": 1000
+      "timeToGeneration": 3000,
+      "timeToSend": 4000
     },
     {
-      "type": "sub",
-      "name": "topicReport",
-      "dataType": "report"
+      "name": "topic3",
+      "dataType": "msg2",
+      "sizePayload": 20,
+      "timeToGeneration": 500,
+      "timeToSend": 1000
     }
   ]
 }

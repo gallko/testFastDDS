@@ -4,10 +4,23 @@
 #include <ParserArgs.h>
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <AvailableDataTypes.h>
 #include "Application.h"
-#include "DataGeneratorFactory.h"
 #include "Participant.h"
+#include "model/DParticipantConfig.h"
+#include "model/DWriterConfig.h"
 
+namespace {
+    const char FieldName[] = "name";
+    const char FieldTimeToReport[] = "timeToReport";
+    const char FieldTopics[] = "topics";
+
+    const char FieldTopicName[] = "name";
+    const char FieldDataType[] = "dataType";
+    const char FieldSizePayload[] = "sizePayload";
+    const char FieldTimeToGeneration[] = "timeToGeneration";
+    const char FieldTimeToSend[] = "timeToSend";
+}
 
 Application *Application::mInstance = nullptr;
 
@@ -35,41 +48,41 @@ Application::~Application() {
 }
 
 std::future<void> Application::sigStopApp(int num) {
-    Signal signal([&]() {
+    Signal signal([this, num](int *return_code) {
+        *return_code = num;
         mIsRun = false;
     });
     std::lock_guard lock(mProtectSignals);
-    if (num == SIGTERM || num == SIGINT) {
-        mIsRun = false;
-    }
+    mSignals.push_back(std::move(signal));
+    mWaitSignal.notify_all();
+    return mSignals.back().get_future();
+}
+
+std::future<void> Application::sigCreateParticipant(const DParticipantConfig &config) {
+    Signal signal([this, config](int *return_code) {
+        mParticipant = std::make_shared<Participant>(config.mName, config.mTimeOutLog, std::shared_ptr<ISignals>(this, [](void *){}));
+        *return_code = !mParticipant->init();
+    });
+    std::lock_guard lock(mProtectSignals);
+    mSignals.push_back(std::move(signal));
+    mWaitSignal.notify_all();
+    return mSignals.back().get_future();
+}
+
+std::future<void> Application::sigCreateWriter(const DWriterConfig &config) {
+    Signal signal([this, config](int *return_code) {
+        *return_code = !mParticipant->createWriter(config.mName, config.mDataType, config.mSizePayload, config.mTimeToSend, config.mTimeToGeneration);
+    });
+    std::lock_guard lock(mProtectSignals);
     mSignals.push_back(std::move(signal));
     mWaitSignal.notify_all();
     return mSignals.back().get_future();
 }
 
 std::future<void> Application::sigPrintLogText(const std::string &message) {
-    Signal signal([message](){
+    Signal signal([message](int *return_code) {
         std::cout << message;
-    });
-    std::lock_guard lock(mProtectSignals);
-    mSignals.push_back(std::move(signal));
-    mWaitSignal.notify_all();
-    return mSignals.back().get_future();
-}
-
-std::future<void> Application::sigAddSender(const DConfigSender &config) {
-    Signal signal([](){
-        std::cout << "sigAddSender" << std::endl;
-    });
-    std::lock_guard lock(mProtectSignals);
-    mSignals.push_back(std::move(signal));
-    mWaitSignal.notify_all();
-    return mSignals.back().get_future();
-}
-
-std::future<void> Application::sigAddReceiver(const DConfigReceiver &config) {
-    Signal signal([](){
-        std::cout << "sigAddReceiver" << std::endl;
+        *return_code = 0;
     });
     std::lock_guard lock(mProtectSignals);
     mSignals.push_back(std::move(signal));
@@ -94,12 +107,6 @@ bool Application::init() {
         return false;
     }
     parse_conf(conf_file.getValue());
-    mParticipant = std::make_shared<Participant>("Participant", 1000,
-                                                 std::shared_ptr<ISignals>(this, [](void *){}));
-    mParticipant->init();
-    mParticipant->creatWriter("MsgTopic", "msg1", 100, 1000, 1000);
-
-
     return true;
 }
 
@@ -108,18 +115,29 @@ int Application::main() {
         return 0;
     }
     if (mSignals.empty()) {
-        mSignals.emplace_back([](){}); // fake signal
+        mSignals.emplace_back([](int *return_code){
+            *return_code = 0;
+        }); // fake signal
     }
     std::cout << "Starting the main event loop.\n";
     do {
         std::unique_lock lock(mProtectSignals);
-        mSignals.front()();
+        auto func = std::move(mSignals.front());
         mSignals.pop_front();
-        mWaitSignal.wait(lock, [this]() {
-            return !mSignals.empty();
-        });
+        lock.unlock();
+
+        int ret_code = 0;
+        func(&ret_code);
+
+        if (ret_code == 0) {
+            lock.lock();
+            mWaitSignal.wait(lock, [this]() {
+                return !mSignals.empty();
+            });
+        } else {
+            mIsRun = false;
+        }
     } while (mIsRun);
-    DataGeneratorFactory::instance()->destroyAllGenerators();
     std::cout << "The main event loop is stopped.\n";
     return 0;
 }
@@ -131,14 +149,22 @@ void Application::parse_conf(const std::string &file) {
         throw std::runtime_error("can't open");
     }
     auto j = json::parse(ifs);
-    if (!j.contains("name")) {
-        throw std::runtime_error("missed required the \"name\" field");
+    if (!(j.contains(FieldName) && j[FieldName].is_string())) {
+        throw std::runtime_error(std::string("missing or incorrect required \"") + FieldName +"\" field");
     }
-    if (!j.contains("topics") && !j["topics"].is_array()) {
-        throw std::runtime_error("missed required or incorrect type of the \"topics\" field");
+    if (!(j.contains(FieldTimeToReport) && j[FieldTimeToReport].is_number_unsigned())) {
+        throw std::runtime_error(std::string("missing or incorrect required \"") + FieldTimeToReport + "\" field");
     }
-    for (auto &topic: j["topics"]) {
-        std::cout << topic.is_object();
-    }
+    sigCreateParticipant({j[FieldName], j[FieldTimeToReport]});
 
+
+    if (!(j.contains(FieldTopics) && j[FieldTopics].is_array())) {
+        throw std::runtime_error(std::string("missing or incorrect required \"") + FieldTopics + "\" field");
+    }
+    for (auto &topic: j[FieldTopics]) {
+        auto conf = DWriterConfig(topic[FieldTopicName], topic[FieldDataType], topic[FieldSizePayload],
+                                  topic[FieldTimeToGeneration],
+                                  topic[FieldTimeToSend]);
+        sigCreateWriter(conf);
+    }
 }

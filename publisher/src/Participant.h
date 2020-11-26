@@ -6,6 +6,8 @@
 
 class ISignals;
 class IWriter;
+class DataGenerator;
+class DWriterConfig;
 
 class Participant : public utils::ThreadBase, public eprosima::fastdds::dds::DataReaderListener {
 public:
@@ -13,20 +15,21 @@ public:
     ~Participant() override;
     bool init();
 
-    bool creatWriter(const std::string &topicName, const std::string &dataName, size_t sizePayload, uint32_t timeOutToSend, uint32_t timeOutToGen);
-    bool destroyWriter(const std::string &topicName);
-
+    bool createWriter(const std::string &topicName, const std::string &dataName, size_t sizePayload, uint32_t timeToSend, uint32_t timeToGen);
+    void destroyWriter(const std::string &topicName);
 
 private:
     void on_data_available(eprosima::fastdds::dds::DataReader *reader) override;
 
 private:
+    using WriterGen = std::pair<std::shared_ptr<IWriter>, std::shared_ptr<DataGenerator>>;
+    using Container = std::map<std::string, WriterGen>;
 
     void onLoop() override;
     void clearDDS();
 
-    std::shared_mutex mProtectedWriters;
-    std::map<std::string, std::shared_ptr<IWriter>> mWriters;
+    std::shared_mutex mProtectedContainer;
+    Container mWriters;
 
     const std::string mName;
     std::shared_ptr<ISignals> mSignals;
@@ -37,7 +40,4 @@ private:
     eprosima::fastdds::dds::Subscriber* mSubscriber;
     eprosima::fastdds::dds::Topic *mTopicReport;
     eprosima::fastdds::dds::DataReader *mReaderReport;
-
-    eprosima::fastdds::dds::TypeSupport mTypeSupportMsg1;
-    eprosima::fastdds::dds::TypeSupport mTypeSupportReport;
 };

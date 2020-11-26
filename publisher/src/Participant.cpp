@@ -1,18 +1,12 @@
 #include "Participant.h"
-#include "WriterMsg1.h"
-#include "DataGeneratorFactory.h"
+#include "impl/DataSourceImpl.h"
+#include "impl/WriterMsg1_impl.h"
+#include "impl/WriterMsg2_impl.h"
 
-#include <Message_1.h>
-#include <Message_1PubSubTypes.h>
-#include <ReportPubSubTypes.h>
+#include <AvailableDataTypes.h>
 
-#include <fastdds/dds/domain/DomainParticipant.hpp>
-#include <fastrtps/attributes/ParticipantAttributes.h>
-#include <fastrtps/attributes/PublisherAttributes.h>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
-#include <fastdds/dds/publisher/Publisher.hpp>
 #include <fastdds/dds/publisher/qos/PublisherQos.hpp>
-#include <fastdds/dds/publisher/DataWriter.hpp>
 #include <fastdds/dds/publisher/qos/DataWriterQos.hpp>
 
 #include <fastdds/dds/subscriber/qos/DataReaderQos.hpp>
@@ -20,6 +14,7 @@
 #include <fastdds/dds/subscriber/DataReader.hpp>
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
 #include <ISignals.h>
+#include <Report.h>
 
 using namespace eprosima::fastdds::dds;
 
@@ -32,10 +27,8 @@ Participant::Participant(const std::string& name, uint32_t timeOutLog, std::shar
     , mSubscriber(nullptr)
     , mTopicReport(nullptr)
     , mReaderReport(nullptr)
-    , mTypeSupportMsg1(new Message_1PubSubType())
-    , mTypeSupportReport(new ReportPubSubType())
 {
-
+    /* empty */
 }
 
 Participant::~Participant() {
@@ -69,7 +62,13 @@ void Participant::clearDDS() {
 }
 
 void Participant::onLoop() {
-    mSignals->sigPrintLogText("From Participant: report\n");
+    std::stringstream ss;
+    for (auto const& [key, val]: mWriters) {
+        auto msg_sent = val.first->getNumberMessagesSent();
+        auto msg_gen = val.second->getContGen();
+        ss << key << ": Sent: " << msg_sent << "; Gen: " << msg_gen << std::endl;
+    }
+    mSignals->sigPrintLogText(ss.str());
 }
 
 bool Participant::init() {
@@ -79,8 +78,7 @@ bool Participant::init() {
     if (!mDomainParticipant) {
         return false;
     }
-    mTypeSupportMsg1.register_type(mDomainParticipant, "msg1");
-    mTypeSupportReport.register_type(mDomainParticipant, "report");
+    AvailableDataTypes::instance().registerAllType(mDomainParticipant);
 
     mPublisher = mDomainParticipant->create_publisher(PUBLISHER_QOS_DEFAULT, nullptr);
     if (!mPublisher) {
@@ -110,12 +108,44 @@ bool Participant::init() {
     return true;
 }
 
-bool Participant::creatWriter(const std::string &topicName, const std::string &typeName, size_t sizePayload, uint32_t timeOutToSend, uint32_t timeOutToGen) {
-    auto writer = std::make_shared<WriterMsg1>(topicName, typeName, timeOutToSend);
-    auto generator = DataGeneratorFactory::instance()->createGenerator<Message_1>(topicName, timeOutToGen, sizePayload, writer);
-    writer->init(generator, mDomainParticipant, mPublisher);
-    mWriters[topicName] = writer;
+bool Participant::createWriter(const std::string &topicName, const std::string &dataName, size_t sizePayload, uint32_t timeToSend, uint32_t timeToGen) {
+    std::unique_lock lock(mProtectedContainer);
+    if (mWriters.find(topicName) != mWriters.end()) {
+        return false;
+    }
+    mWriters[topicName] = {nullptr, nullptr};
+    lock.unlock();
+
+    if (!AvailableDataTypes::instance().isType(dataName)) {
+        return false;
+    }
+    if (dataName == "msg1") {
+        auto writer = std::make_shared<WriterMsg1Impl>(topicName, dataName, timeToSend);
+        auto generator = std::make_shared<DataSourceImpl<Message_1>>(topicName, timeToGen, sizePayload, std::dynamic_pointer_cast<IDataConverter<Message_1>>(writer));
+        if (!generator->init() || !writer->init(generator, mDomainParticipant, mPublisher)) {
+            lock.lock();
+            mWriters.erase(topicName);
+            return false;
+        }
+        lock.lock();
+        mWriters[topicName] = {writer, generator};
+    } else if (dataName == "msg2") {
+        auto writer = std::make_shared<WriterMsg2Impl>(topicName, dataName, timeToSend);
+        auto generator = std::make_shared<DataSourceImpl<Message_2>>(topicName, timeToGen, sizePayload, std::dynamic_pointer_cast<IDataConverter<Message_2>>(writer));
+        if (!generator->init() || !writer->init(generator, mDomainParticipant, mPublisher)) {
+            lock.lock();
+            mWriters.erase(topicName);
+            return false;
+        }
+        lock.lock();
+        mWriters[topicName] = {writer, generator};
+    }
     return true;
+}
+
+void Participant::destroyWriter(const std::string &topicName) {
+    std::unique_lock lock(mProtectedContainer);
+    mWriters.erase(topicName);
 }
 
 void Participant::on_data_available(DataReader *reader) {

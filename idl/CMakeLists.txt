@@ -51,12 +51,18 @@ foreach(it ${IDL_SRC_FILES})
 endforeach(it ${IDL_SRC_FILES})
 
 if(IDL_SRC_FILES_SRC)
+    list(APPEND IDL_SRC_FILES_SRC AvailableDataTypes.cpp)
     add_library(${PROJECT_NAME}_idl STATIC ${IDL_SRC_FILES_SRC})
     target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_idl)
 endif()
+
+include_directories(${IDL_OUT_HPP}/${IDL_RELATIVE_DIRECTORY})
 
 target_include_directories(${PROJECT_NAME}_idl
         INTERFACE ${IDL_OUT_CPP}/${IDL_RELATIVE_DIRECTORY})
 
 add_library(test::IdlGen ALIAS ${PROJECT_NAME}_idl)
+
+target_include_directories(${PROJECT_NAME}_idl
+        INTERFACE ./include)
 

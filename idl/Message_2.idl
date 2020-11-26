@@ -1,0 +1,4 @@
+struct Message_2
+{
+    sequence<long> data;
+};

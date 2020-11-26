@@ -70,7 +70,6 @@ size_t Writer<DataType>::getNumberMessagesSent() const {
 
 template<typename DataType>
 void Writer<DataType>::onLoop() {
-    std::cout << "From Writer: time to send\n";
     if (auto source = mDataSource.lock(); source) {
         auto data = source->popData();
         if (data && mDataWriter->write(data.get())) {

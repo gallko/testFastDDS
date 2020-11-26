@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <ThreadBase.h>
 
 class DataGenerator : public utils::ThreadBase {
@@ -7,8 +8,10 @@ public:
     ~DataGenerator() override = default;
 
     virtual void onDataAvailable(void *sameData, size_t size) = 0;
+    virtual size_t getContGen() const;
 
 private:
     void onLoop() override;
     size_t mSizePayload;
+    std::atomic<size_t> mCountGen;
 };
