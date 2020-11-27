@@ -3,6 +3,8 @@
 #include <ThreadBase.h>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/subscriber/DataReaderListener.hpp>
+#include <Message_1.h>
+#include <Message_2.h>
 
 class ISignals;
 class IWriter;
@@ -24,12 +26,20 @@ private:
 private:
     using WriterGen = std::pair<std::shared_ptr<IWriter>, std::shared_ptr<DataGenerator>>;
     using Container = std::map<std::string, WriterGen>;
+    template<typename DataType>
+    using FuncGen = std::function<std::shared_ptr<DataType>(size_t)>;
 
     void onLoop() override;
     void clearDDS();
 
-    std::shared_mutex mProtectedContainer;
+    template<typename DataType>
+    bool createWriterMsg(const std::string &topicName, const std::string &dataName, size_t sizePayload, uint32_t timeToSend, uint32_t timeToGen, FuncGen<DataType> fun);
+
+    std::shared_mutex mProtectedWriters;
     Container mWriters;
+
+    std::shared_mutex mProtectedReaders;
+    Container mReaders;
 
     const std::string mName;
     std::shared_ptr<ISignals> mSignals;
@@ -41,3 +51,4 @@ private:
     eprosima::fastdds::dds::Topic *mTopicReport;
     eprosima::fastdds::dds::DataReader *mReaderReport;
 };
+

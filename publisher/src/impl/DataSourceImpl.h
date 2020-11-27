@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+#include <functional>
 #include <IDataConverter.h>
 #include <IDataSource.h>
 #include "../DataGenerator.h"
@@ -7,9 +9,9 @@
 template<typename DataType>
 class DataSourceImpl: public IDataSource<DataType>, public DataGenerator {
 public:
-    DataSourceImpl(const std::string &name, uint32_t timeOut, size_t sizePayload, std::weak_ptr<IDataConverter<DataType>> converter)
-            : DataGenerator(name, timeOut, sizePayload)
-            , mConverter(std::move(converter))
+    DataSourceImpl(const std::string &name, uint32_t timeOut, size_t sizePayload)
+            : DataGenerator(name, timeOut)
+            , mSizePayload(sizePayload)
     {
         /* empty */
     }
@@ -20,22 +22,24 @@ public:
         return data;
     }
 
-    std::string getSourceName() const override {
-        return getNameThread();
+    bool init(std::function< std::shared_ptr<DataType>(size_t) > data) {
+        // time to init source
+        mDataSource = std::move(data);
+        return DataGenerator::init();
     }
 
-    bool init() override {
-        return initThread();
+    std::string getSourceName() const override {
+        return DataGenerator::getName();
     }
 
 private:
-    void onDataAvailable(void *sameData, size_t sizePayload) override {
-        if (auto converter = mConverter.lock(); converter) {
-            auto data = converter->converter(sameData, sizePayload);
-            std::atomic_store(&mData, data);
-        }
+    void onDataAvailable() override {
+        // read data from any source
+        auto data = mDataSource(mSizePayload);
+        std::atomic_store(&mData, data);
     }
 
-    std::weak_ptr<IDataConverter<DataType>> mConverter;
     std::shared_ptr<DataType> mData;
+    const size_t mSizePayload;
+    std::function<std::shared_ptr<DataType>(size_t)> mDataSource;
 };

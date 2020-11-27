@@ -7,14 +7,13 @@
 #include <IDataConverter.h>
 #include <IDataSource.h>
 #include <ThreadBase.h>
-#include <Message_1.h>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/publisher/DataWriter.hpp>
 #include <fastdds/dds/publisher/qos/PublisherQos.hpp>
 #include <fastdds/dds/publisher/Publisher.hpp>
 
 template<typename DataType>
-class Writer: public IWriter, public utils::ThreadBase, public IDataConverter<DataType> {
+class Writer: public IWriter, public utils::ThreadBase {
 public:
     Writer(const std::string &topicName, const std::string &typeName, uint32_t timeOutToSend);
     ~Writer() override;

@@ -1,17 +1,19 @@
 #pragma once
 #include <atomic>
 #include <ThreadBase.h>
+#include <vector>
 
-class DataGenerator : public utils::ThreadBase {
+class DataGenerator : private utils::ThreadBase {
 public:
-    DataGenerator(const std::string &name, uint32_t timeOut, size_t sizePayload);
+    DataGenerator(const std::string &name, uint32_t timeOut);
     ~DataGenerator() override = default;
 
-    virtual void onDataAvailable(void *sameData, size_t size) = 0;
+    virtual void onDataAvailable() = 0;
     virtual size_t getContGen() const;
+    virtual bool init();
+    virtual std::string getName() const;
 
 private:
     void onLoop() override;
-    size_t mSizePayload;
     std::atomic<size_t> mCountGen;
 };

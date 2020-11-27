@@ -8,6 +8,5 @@ public:
     virtual ~IDataSource() = default;
 
     virtual std::shared_ptr<DataType> popData() = 0;
-    virtual bool init() = 0;
     virtual std::string getSourceName() const = 0;
 };

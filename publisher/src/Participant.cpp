@@ -1,9 +1,10 @@
 #include "Participant.h"
 #include "impl/DataSourceImpl.h"
-#include "impl/WriterMsg1_impl.h"
-#include "impl/WriterMsg2_impl.h"
+#include "Writer.h"
 
 #include <AvailableDataTypes.h>
+#include <ISignals.h>
+#include <Report.h>
 
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/publisher/qos/PublisherQos.hpp>
@@ -13,10 +14,23 @@
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 #include <fastdds/dds/subscriber/DataReader.hpp>
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
-#include <ISignals.h>
-#include <Report.h>
 
 using namespace eprosima::fastdds::dds;
+
+
+namespace {
+    std::shared_ptr<Message_1> genMsg1(size_t sizePayload) {
+        auto ptr = std::make_shared<Message_1>();
+        ptr->message(std::string(sizePayload, 'a'));
+        return ptr;
+    }
+    std::shared_ptr<Message_2> genMsg2(size_t sizePayload) {
+        auto ptr = std::make_shared<Message_2>();
+        ptr->data(std::vector<int32_t>(sizePayload, 100));
+        return ptr;
+    }
+}
+
 
 Participant::Participant(const std::string& name, uint32_t timeOutLog, std::shared_ptr<ISignals> signals)
     : ThreadBase(name + "_prt", timeOutLog)
@@ -109,42 +123,29 @@ bool Participant::init() {
 }
 
 bool Participant::createWriter(const std::string &topicName, const std::string &dataName, size_t sizePayload, uint32_t timeToSend, uint32_t timeToGen) {
-    std::unique_lock lock(mProtectedContainer);
-    if (mWriters.find(topicName) != mWriters.end()) {
-        return false;
+    {
+        std::unique_lock lock(mProtectedWriters);
+        if (mWriters.find(topicName) != mWriters.end()) {
+            return false;
+        }
+        mWriters[topicName] = {nullptr, nullptr};
     }
-    mWriters[topicName] = {nullptr, nullptr};
-    lock.unlock();
 
     if (!AvailableDataTypes::instance().isType(dataName)) {
         return false;
     }
+
     if (dataName == "msg1") {
-        auto writer = std::make_shared<WriterMsg1Impl>(topicName, dataName, timeToSend);
-        auto generator = std::make_shared<DataSourceImpl<Message_1>>(topicName, timeToGen, sizePayload, writer);
-        if (!generator->init() || !writer->init(generator, mDomainParticipant, mPublisher)) {
-            lock.lock();
-            mWriters.erase(topicName);
-            return false;
-        }
-        lock.lock();
-        mWriters[topicName] = {writer, generator};
+        return createWriterMsg<Message_1>(topicName, dataName, sizePayload, timeToSend, timeToGen, &genMsg1);
     } else if (dataName == "msg2") {
-        auto writer = std::make_shared<WriterMsg2Impl>(topicName, dataName, timeToSend);
-        auto generator = std::make_shared<DataSourceImpl<Message_2>>(topicName, timeToGen, sizePayload, writer);
-        if (!generator->init() || !writer->init(generator, mDomainParticipant, mPublisher)) {
-            lock.lock();
-            mWriters.erase(topicName);
-            return false;
-        }
-        lock.lock();
-        mWriters[topicName] = {writer, generator};
+        return createWriterMsg<Message_2>(topicName, dataName, sizePayload, timeToSend, timeToGen, &genMsg2);
     }
+
     return true;
 }
 
 void Participant::destroyWriter(const std::string &topicName) {
-    std::unique_lock lock(mProtectedContainer);
+    std::unique_lock lock(mProtectedWriters);
     mWriters.erase(topicName);
 }
 
@@ -159,3 +160,26 @@ void Participant::on_data_available(DataReader *reader) {
     }
 }
 
+template<typename DataType>
+bool Participant::createWriterMsg(
+        const std::string &topicName,
+        const std::string &dataName,
+        size_t sizePayload,
+        uint32_t timeToSend,
+        uint32_t timeToGen,
+        FuncGen<DataType> fun)
+{
+    auto writer = std::make_shared<Writer<DataType>>(topicName, dataName, timeToSend);
+    auto generator = std::make_shared<DataSourceImpl<DataType>>(topicName, timeToGen, sizePayload);
+    auto g_init = generator->init(fun);
+    auto w_init = writer->init(generator, mDomainParticipant, mPublisher);
+
+    std::unique_lock lock(mProtectedWriters);
+    if (g_init && w_init) {
+        mWriters[topicName] = {writer, generator};
+        return true;
+    } else {
+        mWriters.erase(topicName);
+        return false;
+    }
+}

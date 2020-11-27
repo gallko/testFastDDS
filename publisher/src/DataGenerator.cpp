@@ -1,14 +1,12 @@
 #include "DataGenerator.h"
 
 
-DataGenerator::DataGenerator(const std::string &name, uint32_t timeOut, size_t sizePayload)
+DataGenerator::DataGenerator(const std::string &name, uint32_t timeOut)
     : utils::ThreadBase(name + "_gen", timeOut)
-    , mSizePayload(sizePayload)
-    , mCountGen()
+    , mCountGen(0)
 {
     /* empty */
 }
-
 
 size_t DataGenerator::getContGen() const {
     return mCountGen.load();
@@ -16,5 +14,13 @@ size_t DataGenerator::getContGen() const {
 
 void DataGenerator::onLoop() {
     mCountGen++;
-    onDataAvailable(nullptr, mSizePayload);
+    onDataAvailable();
+}
+
+bool DataGenerator::init() {
+    return initThread();
+}
+
+std::string DataGenerator::getName() const {
+    return getNameThread();
 }
