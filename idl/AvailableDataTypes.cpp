@@ -20,12 +20,12 @@ AvailableDataTypes::AvailableDataTypes()
                  })
 {}
 
-bool AvailableDataTypes::isType(const std::string &string) const {
-    return mContainer.find(string) != mContainer.cend();
+bool AvailableDataTypes::isType(const std::string &typeName) const {
+    return mContainer.find(typeName) != mContainer.cend();
 }
 
-TypeSupport &AvailableDataTypes::getType(const std::string &string) const {
-    return const_cast<TypeSupport &>(mContainer.find(string)->second);
+TypeSupport &AvailableDataTypes::getType(const std::string &typeName) const {
+    return const_cast<TypeSupport &>(mContainer.find(typeName)->second);
 }
 
 void AvailableDataTypes::registerType(eprosima::fastdds::dds::DomainParticipant *domainParticipant, const std::string &typeName) {

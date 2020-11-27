@@ -16,7 +16,7 @@ namespace {
     const char FieldTopics[] = "topics";
 
     const char FieldTopicName[] = "name";
-    const char FieldDataType[] = "dataType";
+    const char FieldDataType[] = "typeName";
     const char FieldSizePayload[] = "sizePayload";
     const char FieldTimeToGeneration[] = "timeToGeneration";
     const char FieldTimeToSend[] = "timeToSend";

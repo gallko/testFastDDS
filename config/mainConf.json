@@ -4,21 +4,21 @@
   "topics": [
     {
       "name": "topic1",
-      "dataType": "msg1",
+      "typeName": "msg1",
       "sizePayload": 50,
       "timeToGeneration": 4000,
       "timeToSend": 5000
     },
     {
       "name": "topic2",
-      "dataType": "msg2",
+      "typeName": "msg2",
       "sizePayload": 100,
       "timeToGeneration": 3000,
       "timeToSend": 4000
     },
     {
       "name": "topic3",
-      "dataType": "msg2",
+      "typeName": "msg2",
       "sizePayload": 20,
       "timeToGeneration": 500,
       "timeToSend": 1000

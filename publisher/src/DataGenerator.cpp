@@ -8,6 +8,10 @@ DataGenerator::DataGenerator(const std::string &name, uint32_t timeOut)
     /* empty */
 }
 
+void DataGenerator::resetCountGen() {
+    mCountGen.store(0);
+}
+
 size_t DataGenerator::getContGen() const {
     return mCountGen.load();
 }

@@ -9,7 +9,8 @@ public:
     ~DataGenerator() override = default;
 
     virtual void onDataAvailable() = 0;
-    virtual size_t getContGen() const;
+    void resetCountGen();
+    size_t getContGen() const;
     virtual bool init();
     virtual std::string getName() const;
 

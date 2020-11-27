@@ -7,6 +7,7 @@ class IDataSource {
 public:
     virtual ~IDataSource() = default;
 
+    virtual void resetCount() = 0;
     virtual std::shared_ptr<DataType> popData() = 0;
     virtual std::string getSourceName() const = 0;
 };

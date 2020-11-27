@@ -1,4 +1,5 @@
 struct Report
 {
+    string name;
     long number_of_packets;
 };

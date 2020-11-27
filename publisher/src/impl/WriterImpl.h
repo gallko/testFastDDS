@@ -2,29 +2,36 @@
 
 #include <memory>
 #include <string>
-#include <atomic>
+#include <shared_mutex>
+
 #include <IWriter.h>
-#include <IDataConverter.h>
 #include <IDataSource.h>
 #include <ThreadBase.h>
+
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/publisher/DataWriter.hpp>
 #include <fastdds/dds/publisher/qos/PublisherQos.hpp>
 #include <fastdds/dds/publisher/Publisher.hpp>
+#include <fastdds/dds/publisher/DataWriterListener.hpp>
 
 template<typename DataType>
-class Writer: public IWriter, public utils::ThreadBase {
+class WriterImpl: public IWriter, public utils::ThreadBase, public eprosima::fastdds::dds::DataWriterListener {
 public:
-    Writer(const std::string &topicName, const std::string &typeName, uint32_t timeOutToSend);
-    ~Writer() override;
+    WriterImpl(const std::string &topicName, const std::string &typeName, uint32_t timeOutToSend);
+    ~WriterImpl() override;
 
     bool init(std::weak_ptr<IDataSource<DataType>> dataSource,
               eprosima::fastdds::dds::DomainParticipant* domainParticipant,
-              eprosima::fastdds::dds::Publisher* mPublisher);
+              eprosima::fastdds::dds::Publisher* publisher);
 
-    size_t getNumberMessagesSent() const override;
+    void startCount() override;
+    void stopCount() override;
+    std::pair<bool, size_t> getCountStatus() const override;
+
+
 
 private:
+    void on_publication_matched(eprosima::fastdds::dds::DataWriter *writer, const eprosima::fastdds::dds::PublicationMatchedStatus &info) override;
     void onLoop() override;
 
     const std::string mTypeName;
@@ -34,8 +41,13 @@ private:
     eprosima::fastdds::dds::Publisher* mPublisher;
     eprosima::fastdds::dds::DataWriter* mDataWriter;
     eprosima::fastdds::dds::Topic* mTopic;
-    std::atomic<size_t> mCountSent;
+
+    mutable std::shared_mutex mProtectCount;
+    bool mIsActive;
+    size_t mCountSent;
+
+    int mMatched;
 };
 
-#include "Writer.hpp"
+#include "WriterImpl.hpp"
 

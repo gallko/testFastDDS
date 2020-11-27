@@ -2,15 +2,14 @@
 
 #include <memory>
 #include <functional>
-#include <IDataConverter.h>
 #include <IDataSource.h>
 #include "../DataGenerator.h"
 
 template<typename DataType>
 class DataSourceImpl: public IDataSource<DataType>, public DataGenerator {
 public:
-    DataSourceImpl(const std::string &name, uint32_t timeOut, size_t sizePayload)
-            : DataGenerator(name, timeOut)
+    DataSourceImpl(const std::string &topicName, uint32_t timeOut, size_t sizePayload)
+            : DataGenerator(topicName, timeOut)
             , mSizePayload(sizePayload)
     {
         /* empty */
@@ -30,6 +29,10 @@ public:
 
     std::string getSourceName() const override {
         return DataGenerator::getName();
+    }
+
+    void resetCount() override {
+        resetCountGen();
     }
 
 private:
