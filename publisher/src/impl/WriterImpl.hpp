@@ -115,13 +115,4 @@ void WriterImpl<DataType>::on_publication_matched(eprosima::fastdds::dds::DataWr
         stopCount();
     }
     mMatched = info.total_count;
-
-    if (info.current_count_change > 0)
-    {
-        std::cout << "Publisher matched." << std::endl;
-    }
-    else if (info.current_count_change < 0)
-    {
-        std::cout << "Publisher unmatched." << std::endl;
-    }
 }

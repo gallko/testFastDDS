@@ -14,7 +14,7 @@ class DataGenerator;
 class DWriterConfig;
 class ReaderReport;
 
-class Participant : public utils::ThreadBase{
+class Participant : public utils::ThreadBase {
 public:
     Participant(const std::string& name, uint32_t timeOutLog, std::shared_ptr<ISignals> signals);
     ~Participant() override;

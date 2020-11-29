@@ -16,7 +16,7 @@ void DataGenerator::startGen() {
 
 void DataGenerator::stopGen() {
     std::unique_lock lock(mProtect);
-    isActive = true;
+    isActive = false;
     mCountGen = 0;
 }
 

@@ -6,7 +6,6 @@
 #include "impl/ReaderImpl.h"
 
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
-#include <fastdds/dds/publisher/qos/PublisherQos.hpp>
 #include <Reports.h>
 #include <Message_1.h>
 #include <Message_2.h>
@@ -14,9 +13,9 @@
 using namespace eprosima::fastdds::dds;
 
 Participant::Participant(const std::string& name, uint32_t timeOutReport, std::shared_ptr<ISignals> signals)
-    : ThreadBase(name + "_prt", timeOutReport)
-    , mName(name)
+    : mName(name)
     , mSignals(std::move(signals))
+    , mWriterReport(std::make_shared<WriterImpl<Reports>>("Report", "report", timeOutReport))
     , mDomainParticipant(nullptr)
     , mPublisher(nullptr)
     , mSubscriber(nullptr)
@@ -25,6 +24,7 @@ Participant::Participant(const std::string& name, uint32_t timeOutReport, std::s
 }
 
 Participant::~Participant() {
+    mWriterReport.reset();
     mReaders.clear();
     clearDDS();
 }
@@ -67,25 +67,15 @@ bool Participant::init() {
         return false;
     }
 
-    return initThread();
-}
+    mWriterReport->init(shared_from_this(), mDomainParticipant, mPublisher);
+    if (!mWriterReport) {
+        clearDDS();
+        return false;
+    }
 
-void Participant::onLoop() {
-    std::stringstream ss;
-    Reports reports;
-    std::shared_lock lock(mProtectReaders);
-    for (const auto &[name, reader]: mReaders) {
-        if (!reader->haveConnection()) {
-            continue;
-        }
-        ReportTopic r;
-        r.name(name);
-        r.number_of_packets(reader->getCountRecv());
-        reports.data().push_back(std::move(r));
-    }
-    if (!reports.data().empty()) {
-        mSignals->sigPrintLogText("Time to send report\n");
-    }
+    mWriterReport->startCount();
+
+    return true;
 }
 
 bool Participant::createReader(const std::string &topicName, const std::string &typeName) {
@@ -106,4 +96,36 @@ bool Participant::createReader(const std::string &topicName, const std::string &
     }
     mReaders[topicName] = reader;
     return true;
+}
+
+void Participant::startCounting() {
+
+}
+
+void Participant::stopCounting() {
+
+}
+
+std::shared_ptr<Reports> Participant::popData() {
+    std::stringstream ss;
+    std::shared_ptr<Reports> reports{nullptr};
+
+    std::shared_lock lock(mProtectReaders);
+    if (!mReaders.empty()) {
+        reports = std::make_shared<Reports>();
+        for (const auto &[name, reader]: mReaders) {
+            if (!reader->haveConnection()) {
+                continue;
+            }
+            ReportTopic r;
+            r.name(name);
+            r.number_of_packets(reader->getCountRecv());
+            reports->data().push_back(std::move(r));
+        }
+    }
+    return reports;
+}
+
+std::string Participant::getSourceName() const {
+    return mName;
 }

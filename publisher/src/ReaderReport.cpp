@@ -61,8 +61,10 @@ bool ReaderReport::init(eprosima::fastdds::dds::DomainParticipant *domainPartici
     if (mTopic == nullptr) {
         return false;
     }
-    mDataReader = mSubscriber->create_datareader(mTopic, DATAREADER_QOS_DEFAULT, this);
 
+    DataReaderQos rqos = DATAREADER_QOS_DEFAULT;
+    rqos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    mDataReader = mSubscriber->create_datareader(mTopic, rqos, this);
     if (mDataReader == nullptr) {
         mDomainParticipant->delete_topic(mTopic);
         mTopic = nullptr;
