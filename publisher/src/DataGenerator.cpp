@@ -4,21 +4,33 @@
 DataGenerator::DataGenerator(const std::string &name, uint32_t timeOut)
     : utils::ThreadBase(name + "_gen", timeOut)
     , mCountGen(0)
+    , isActive(false)
 {
     /* empty */
 }
 
-void DataGenerator::resetCountGen() {
-    mCountGen.store(0);
+void DataGenerator::startGen() {
+    std::unique_lock lock(mProtect);
+    isActive = true;
 }
 
-size_t DataGenerator::getContGen() const {
-    return mCountGen.load();
+void DataGenerator::stopGen() {
+    std::unique_lock lock(mProtect);
+    isActive = true;
+    mCountGen = 0;
 }
 
+std::pair<bool, size_t> DataGenerator::getStatusGen() const {
+    std::shared_lock lock(mProtect);
+    return {isActive, mCountGen};
+}
 void DataGenerator::onLoop() {
-    mCountGen++;
-    onDataAvailable();
+    std::unique_lock lock(mProtect);
+    if (isActive) {
+        mCountGen++;
+        lock.unlock();
+        onDataAvailable();
+    }
 }
 
 bool DataGenerator::init() {

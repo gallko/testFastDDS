@@ -1,7 +1,10 @@
 #pragma once
-#include <atomic>
+
 #include <ThreadBase.h>
+
+#include <atomic>
 #include <vector>
+#include <shared_mutex>
 
 class DataGenerator : private utils::ThreadBase {
 public:
@@ -9,12 +12,16 @@ public:
     ~DataGenerator() override = default;
 
     virtual void onDataAvailable() = 0;
-    void resetCountGen();
-    size_t getContGen() const;
+    void startGen();
+    void stopGen();
+    std::pair<bool, size_t> getStatusGen() const;
     virtual bool init();
     virtual std::string getName() const;
 
 private:
     void onLoop() override;
-    std::atomic<size_t> mCountGen;
+
+    mutable std::shared_mutex mProtect;
+    size_t mCountGen;
+    bool isActive;
 };

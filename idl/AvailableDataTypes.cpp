@@ -3,7 +3,7 @@
 
 #include <Message_1PubSubTypes.h>
 #include <Message_2PubSubTypes.h>
-#include <ReportPubSubTypes.h>
+#include <ReportsPubSubTypes.h>
 
 using namespace eprosima::fastdds::dds;
 
@@ -16,7 +16,7 @@ AvailableDataTypes::AvailableDataTypes()
     : mContainer({
                          {"msg1", TypeSupport(new Message_1PubSubType())},
                          {"msg2", TypeSupport(new Message_2PubSubType())},
-                         {"report", TypeSupport(new ReportPubSubType())}
+                         {"report", TypeSupport(new ReportsPubSubType())}
                  })
 {}
 

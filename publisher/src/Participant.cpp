@@ -72,14 +72,18 @@ void Participant::onLoop() {
     for (auto const& [key, val]: mWriters) {
         if (val.first && val.second) {
             auto msg_sent = val.first->getCountStatus();
-            if (msg_sent.first) {
-                auto msg_gen = val.second->getContGen();
-                ss << key << ": Sent: " << msg_sent.second << "; Lost: " << msg_gen - msg_sent.second  << std::endl;
+            auto msg_gen = val.second->getStatusGen();
+            if (msg_sent.first && msg_gen.first) {
+                ss << key << ": Sent: " << msg_sent.second << "; Lost: " << msg_gen.second - msg_sent.second  << std::endl;
             }
         }
     }
     lock.unlock();
-    mSignals->sigPrintLogText(ss.str());
+    auto str = ss.str();
+    if (!str.empty()) {
+        ss << std::endl;
+        mSignals->sigPrintLogText(ss.str());
+    }
 }
 
 bool Participant::init() {

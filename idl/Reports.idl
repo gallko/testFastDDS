@@ -1,0 +1,6 @@
+#include "ReportTopic.idl"
+
+struct Reports
+{
+    sequence<ReportTopic> data;
+};

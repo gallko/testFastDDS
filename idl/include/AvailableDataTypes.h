@@ -1,8 +1,6 @@
 #pragma once
 #include <map>
 #include <string>
-#include <Message_1.h>
-#include <Message_2.h>
 
 namespace eprosima::fastdds::dds {
     class TypeSupport;

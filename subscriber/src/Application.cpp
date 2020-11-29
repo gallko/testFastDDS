@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <iostream>
+#include <csignal>
 #include <ParserArgs.h>
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -7,7 +8,7 @@
 #include "Application.h"
 #include "Participant.h"
 #include "model/DParticipantConfig.h"
-#include "model/DWriterConfig.h"
+#include "model/DReaderConfig.h"
 
 namespace {
     const char FieldName[] = "name";
@@ -16,9 +17,6 @@ namespace {
 
     const char FieldTopicName[] = "name";
     const char FieldDataType[] = "typeName";
-    const char FieldSizePayload[] = "sizePayload";
-    const char FieldTimeToGeneration[] = "timeToGeneration";
-    const char FieldTimeToSend[] = "timeToSend";
 }
 
 Application *Application::mInstance = nullptr;
@@ -69,17 +67,17 @@ std::future<void> Application::sigCreateParticipant(const DParticipantConfig &co
 }
 
 std::future<void> Application::sigCreateWriter(const DWriterConfig &config) {
+    return std::future<void>();
+}
+
+std::future<void> Application::sigCreateReader(const DReaderConfig &config) {
     Signal signal([this, config](int *return_code) {
-        *return_code = !mParticipant->createWriter(config.mName, config.mDataType, config.mSizePayload, config.mTimeToSend, config.mTimeToGeneration);
+        *return_code = !mParticipant->createReader(config.mName, config.mDataType);
     });
     std::lock_guard lock(mProtectSignals);
     mSignals.push_back(std::move(signal));
     mWaitSignal.notify_all();
     return mSignals.back().get_future();
-}
-
-std::future<void> Application::sigCreateReader(const DReaderConfig &config) {
-    return std::future<void>();
 }
 
 std::future<void> Application::sigPrintLogText(const std::string &message) {
@@ -170,14 +168,10 @@ void Application::parse_conf(const std::string &file) {
     }
     sigCreateParticipant({j[FieldName], j[FieldTimeToReport]});
 
-
     if (!(j.contains(FieldTopics) && j[FieldTopics].is_array())) {
         throw std::runtime_error(std::string("missing or incorrect required \"") + FieldTopics + "\" field");
     }
     for (auto &topic: j[FieldTopics]) {
-        auto conf = DWriterConfig(topic[FieldTopicName], topic[FieldDataType], topic[FieldSizePayload],
-                                  topic[FieldTimeToGeneration],
-                                  topic[FieldTimeToSend]);
-        sigCreateWriter(conf);
+        sigCreateReader({ topic[FieldTopicName], topic[FieldDataType] });
     }
 }

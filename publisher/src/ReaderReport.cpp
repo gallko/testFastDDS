@@ -5,7 +5,7 @@
 #include <fastdds/dds/subscriber/qos/DataReaderQos.hpp>
 #include <fastdds/dds/subscriber/Subscriber.hpp>
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
-#include <Report.h>
+#include <Reports.h>
 
 
 ReaderReport::ReaderReport(const std::string &topicName, const std::string &typeName,
@@ -35,12 +35,14 @@ ReaderReport::~ReaderReport() {
 void ReaderReport::on_data_available(eprosima::fastdds::dds::DataReader *reader) {
     using namespace eprosima::fastdds::dds;
     SampleInfo info;
-    Report msg;
+    Reports msg;
     if (reader->take_next_sample(&msg, &info) == ReturnCode_t::RETCODE_OK) {
         if (info.instance_state == ALIVE)
         {
             std::stringstream ss;
-            ss << "Report from " << msg.name() << ": " << "received " << msg.number_of_packets() << " messages\n";
+            for(const auto &item: msg.data()) {
+                ss << "Report from " << item.name() << ": " << "received " << item.number_of_packets() << " messages\n";
+            }
             mSignals->sigPrintLogText(ss.str());
         }
     }

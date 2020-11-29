@@ -1,5 +1,7 @@
 #pragma once
 
+#include <langinfo.h>
+
 template<typename DataType>
 WriterImpl<DataType>::WriterImpl(const std::string &topicName, const std::string &typeName, uint32_t timeOutToSend)
     : ThreadBase(topicName + "_wrt", timeOutToSend)
@@ -100,20 +102,21 @@ void WriterImpl<DataType>::onLoop() {
 
 template<typename DataType>
 void WriterImpl<DataType>::on_publication_matched(eprosima::fastdds::dds::DataWriter *writer, const eprosima::fastdds::dds::PublicationMatchedStatus &info) {
-    int oldMatched = mMatched;
-    mMatched = info.total_count;
-
-    if (oldMatched == 0 && mMatched > 0) {
-        auto source = mDataSource.lock();
+    auto source = mDataSource.lock();
+    if (mMatched == 0 && info.total_count > 0) {
         if (source) {
-            source->resetCount();
+            source->startCounting();
         }
         startCount();
-    } else if (oldMatched > 0 && mMatched == 0) {
+    } else if (mMatched > 0 && info.total_count == 0) {
+        if (source) {
+            source->stopCounting();
+        }
         stopCount();
     }
+    mMatched = info.total_count;
 
-    if (info.current_count_change > 1)
+    if (info.current_count_change > 0)
     {
         std::cout << "Publisher matched." << std::endl;
     }

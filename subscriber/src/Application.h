@@ -33,6 +33,7 @@ public:
     std::future<void> sigCreateWriter(const DWriterConfig &config) override;
     std::future<void> sigCreateReader(const DReaderConfig &config) override;
 
+
 private:
     using Signal = std::packaged_task< void(int *) >;
 

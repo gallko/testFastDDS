@@ -17,7 +17,9 @@ public:
     ~DataSourceImpl() override = default;
 
     std::shared_ptr<DataType> popData() override {
+        auto status = getStatusGen().first;
         auto data = std::atomic_exchange(&mData, std::shared_ptr<DataType>(nullptr));
+        if (status)
         return data;
     }
 
@@ -31,8 +33,13 @@ public:
         return DataGenerator::getName();
     }
 
-    void resetCount() override {
-        resetCountGen();
+    void startCounting() override {
+        startGen();
+    }
+
+    void stopCounting() override {
+        std::atomic_store(&mData, std::shared_ptr<DataType>());
+        stopGen();
     }
 
 private:

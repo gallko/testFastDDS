@@ -1,5 +1,5 @@
 {
-  "name": "Participant",
+  "name": "publisher",
   "timeToReport": 5000,
   "topics": [
     {

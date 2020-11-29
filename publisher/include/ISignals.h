@@ -4,6 +4,7 @@
 
 class DParticipantConfig;
 class DWriterConfig;
+class DReaderConfig;
 
 class ISignals {
 public:
@@ -13,4 +14,5 @@ public:
     virtual std::future<void> sigStopApp(int num = 0) = 0;
     virtual std::future<void> sigCreateParticipant(const DParticipantConfig &config) = 0;
     virtual std::future<void> sigCreateWriter(const DWriterConfig &config) = 0;
+    virtual std::future<void> sigCreateReader(const DReaderConfig &config) = 0;
 };

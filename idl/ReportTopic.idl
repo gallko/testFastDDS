@@ -1,0 +1,5 @@
+struct ReportTopic
+{
+    string name;
+    unsigned long number_of_packets;
+};
