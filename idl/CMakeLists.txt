@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(idl_files)
 
 file(GLOB IDL_SRC_FILES *.idl)
-file(GLOB ${PROJECT_NAME}_src *.cpp)
 
-add_library(${PROJECT_NAME} STATIC ${${PROJECT_NAME}_src})
+add_library(${PROJECT_NAME} STATIC null.cpp)
 
 if(NOT DEFINED IDL_EXE)
     message(FATAL_ERROR "Please set IDL_EXE variable.")
